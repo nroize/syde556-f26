@@ -23,8 +23,8 @@ if ! git remote get-url origin >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Your working tree has changes. Commit or stash them before updating." >&2
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Your working tree has tracked changes. Commit or stash them before updating." >&2
   exit 1
 fi
 
