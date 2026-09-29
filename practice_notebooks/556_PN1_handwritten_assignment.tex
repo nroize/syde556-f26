@@ -1,0 +1,149 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.82in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array,enumitem,multicol,xcolor,graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\setlist[enumerate]{leftmargin=*,itemsep=0.42em,topsep=0.35em}
+\setlist[itemize]{leftmargin=*,itemsep=0.2em,topsep=0.2em}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{SYDE 556/750 \quad Handwritten Assignment 1}
+\rhead{Neurons and population representation}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\vct}[1]{\boldsymbol{#1}}
+\newcommand{\work}{\par\vspace{0.45em}\noindent\textcolor{gray}{\rule{\linewidth}{0.35pt}}\par\vspace{0.45em}}
+\newcommand{\grid}[2]{%
+\begin{center}\begin{tikzpicture}[x=0.43cm,y=0.43cm]
+  \draw[step=1,gray!22,very thin] (0,0) grid (#1,#2);
+  \draw[->,thick] (0,#2/2) -- (#1+0.3,#2/2);
+  \draw[->,thick] (#1/2,0) -- (#1/2,#2+0.3);
+\end{tikzpicture}\end{center}}
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Handwritten Assignment 1}\\[2pt]
+{\large Neurons and Population Representation}\\[4pt]
+\end{center}
+\noindent\textbf{Scope.} This is a pen-and-paper counterpart to PN1. It covers scalar and vector encoding, least-squares decoding, noise and error scaling, and LIF rate neurons.\par
+\noindent\textbf{Instructions.} Write all answers by hand on separate paper; attach your sketches and calculations in question order. Show your reasoning, label axes and units, and give numerical answers to three significant figures. A basic calculator is permitted for logarithms and exponentials. No programming or computer-generated plots are needed. All activity values in the worked tables below are in units of \(100\,\mathrm{Hz}\) unless stated otherwise.\par
+\noindent\textbf{Conventions.} A scalar neuron's current is \(J_i(x)=\alpha_i e_i x+J_i^{\mathrm{bias}}\), with \(e_i\in\{-1,+1\}\). Following PN1 and Lecture 3, the named \(x\)-intercept \(\xi_i\) is a value of the \emph{projected input} \(e_i x\): firing begins when \(e_i x=\xi_i\). Thus the crossing on an ordinary plot against \(x\) is at \(x=\xi_i/e_i\). For \(m\) input samples, activities form \(A\in\R^{n\times m}\), with neurons in rows.\par
+
+\section*{1. Scalar ReLU neurons: encoding and tuning}
+The rate model is \(G(J)=\max(J,0)\). Maximum rate \(a^{\max}\) occurs at preferred input \(e x=1\).
+\begin{enumerate}[label=\textbf{1\alph*.}]
+\item For a general rate model with threshold current \(J_{\mathrm{th}}\) and inverse \(G^{-1}(a^{\max})=J_{\max}\), solve \(J_{\max}=\alpha+J^{\mathrm{bias}}\) and \(J_{\mathrm{th}}=\alpha\xi+J^{\mathrm{bias}}\) for gain and bias. Specialize to ReLU. Explain why writing \(G^{-1}(0)\) without specifying the threshold is ambiguous for ReLU.
+\item Use your formulas to complete the table. Rates are in Hz. Then calculate each neuron's rate at \(x=-1,-0.5,0,0.5,1\).
+\begin{center}\begin{tabular}{c r r c c c}\toprule
+Neuron & \(a^{\max}\) & \(\xi\) & \(e\) & \(\alpha\) & \(J^{\mathrm{bias}}\)\\\midrule
+1 & 100 & 0 & \(+1\) & & \\
+2 & 150 & \(-0.5\) & \(+1\) & & \\
+3 & 100 & 0 & \(-1\) & & \\
+4 & 150 & \(-0.5\) & \(-1\) & & \\
+\bottomrule\end{tabular}\end{center}
+\item On one set of axes, sketch the four tuning curves over \([-1,1]\). Label each curve, its intercept in \(x\), and where it reaches \(a^{\max}\). Explain how the sketch would change for a population of 16 neurons with \(a^{\max}\sim U[100,200]\), \(\xi\sim U[-0.95,0.95]\), and equally likely encoders.\par
+\end{enumerate}
+
+\section*{2. Scalar identity decoding and noise}
+For hand arithmetic use three inputs \(\vct{x}=(-1,0,1)^T\) and two normalized ReLU activity rows
+\[
+A=\begin{bmatrix}0&1&2\\2&1&0\end{bmatrix},\qquad
+A_{\mathrm{test}}^{\mathrm{noisy}}=\begin{bmatrix}0&1&2.5\\2.5&1&0\end{bmatrix}.
+\]
+The noisy matrix is one possible test realization. It is \emph{not} used to fit decoders. For independent zero-mean activity noise of standard deviation \(\sigma=0.5\), use the objective \(\|\vct{x}-\vct{d}^{T}A\|_2^2+m\sigma^2\|\vct{d}\|_2^2\), where \(m=3\).
+\begin{enumerate}[label=\textbf{2\alph*.}]
+\item Derive the unregularized normal equations \((AA^T)\vct{d}=A\vct{x}\). Compute \(AA^T\), \(A\vct{x}\), and the two decoder coefficients. State why decoder coefficients can have opposite signs.
+\item Compute \(\hat{\vct{x}}=\vct{d}^{T}A\) and the three signed errors \(\vct{x}-\hat{\vct{x}}\). Calculate the root mean square error
+\(\mathrm{RMSE}=\sqrt{m^{-1}\sum_k(x_k-\hat{x}_k)^2}\). Sketch decoded versus ideal values and error versus \(x\).
+\item Apply the \emph{same} decoder to \(A_{\mathrm{test}}^{\mathrm{noisy}}\). Compute decoded values, errors, and RMSE. What changed?
+\item Derive the noise-aware normal equations. Compute the regularized decoder using the clean \(A\), then test it on both clean and noisy activities. Complete the table and explain the clean-accuracy versus noise-robustness tradeoff.
+\begin{center}\begin{tabular}{lcc}\toprule
+Decoder & Clean-test RMSE & Noisy-test RMSE\\\midrule
+Noise ignored & & \\
+Noise aware & & \\
+\bottomrule\end{tabular}\end{center}
+\end{enumerate}
+
+\section*{3. Distortion and noise as population size grows}
+For a noise-aware decoder define \(E_{\mathrm{dist}}=\frac1m\sum_k(x_k-\hat{x}_k^{\mathrm{clean}})^2\) and \(E_{\mathrm{noise}}=\sigma^2\sum_i d_i^2\). The latter is the expected added mean-squared error from independent activity noise. Consider the following illustrative averages over fresh populations; the values are for interpreting scaling, not for recomputing decoders.
+\begin{center}\begin{tabular}{rccccc}\toprule
+\(n\) & 4 & 8 & 16 & 32 & 64\\\midrule
+\(E_{\mathrm{dist}}\) & 0.0400 & 0.0100 & 0.00250 & 0.000625 & 0.000156\\
+\(E_{\mathrm{noise}}\), \(\sigma=0.1\max(A)\) & 0.0400 & 0.0200 & 0.0100 & 0.00500 & 0.00250\\\bottomrule
+\end{tabular}\end{center}
+\begin{enumerate}[label=\textbf{3\alph*.}]
+\item On separate log-log axes, plot the two rows against \(n\). Determine each slope from the effect of doubling \(n\), and identify which follows \(1/n\) and which follows \(1/n^2\). Extrapolate both errors to \(n=128,256,512\).
+\item If \(\sigma\) falls from \(0.1\max(A)\) to \(0.01\max(A)\) while the decoders are held fixed, by what factor does \(E_{\mathrm{noise}}\) change? At \(n=16\), compare it with \(E_{\mathrm{dist}}\). Explain how recomputing the decoders at the new noise level may change \(E_{\mathrm{dist}}\) too.
+\item Why can adding more neurons suppress distortion faster than independent noise? Explain why an average over several fresh populations is more persuasive than a single random population.
+\end{enumerate}
+
+\section*{4. LIF rate neurons}
+For the rest of the assignment use \(\tau_{\mathrm{ref}}=0.002\,\mathrm{s}\) and \(\tau_{\mathrm{RC}}=0.020\,\mathrm{s}\). The LIF rate approximation is
+\[
+G(J)=\begin{cases}
+\displaystyle\bigl[\tau_{\mathrm{ref}}-\tau_{\mathrm{RC}}\ln(1-1/J)\bigr]^{-1},&J>1,\\
+0,&J\leq1.
+\end{cases}
+\]
+\begin{enumerate}[label=\textbf{4\alph*.}]
+\item Invert the above-threshold rate equation to obtain \(J_{\max}\) from \(a^{\max}\). Use \(J_{\mathrm{th}}=1\) to derive \(\alpha\) and \(J^{\mathrm{bias}}\) for a specified \(a^{\max}\) and projected-input intercept \(\xi\).
+\item For \(a^{\max}=100\,\mathrm{Hz}\), \(\xi=0\), and \(e=+1\), compute \(J_{\max},\alpha,J^{\mathrm{bias}}\), then rates at \(x=-1,0,0.5,1\). Sketch the curve. How would the curve change for \(e=-1\)? Compare its shape near threshold with ReLU. Use \(e^{-0.4}\approx0.6703\).
+\item A small LIF population has normalized activities at \(x=-1,0,1\):
+\[
+B=\begin{bmatrix}0&0&1\\1&0&0\end{bmatrix},\qquad
+B_{\mathrm{test}}^{\mathrm{noisy}}=\begin{bmatrix}0&0&1.2\\1.2&0&0\end{bmatrix}.
+\]
+With \(\sigma=0.2\) and \(m=3\), compute its unregularized and noise-aware identity decoders. Test both decoders on both matrices. Give a four-entry RMSE table and sketch \(\hat{x}\) and \(x-\hat{x}\) for the noise-aware decoder under both test conditions.
+\end{enumerate}
+
+\newpage
+\section*{5. A LIF neuron's two-dimensional tuning}
+Now \(\vct{x}\in\R^2\) and \(J(\vct{x})=\alpha\vct{e}\cdot\vct{x}+J^{\mathrm{bias}}\). Let \(\vct{e}=(1/\sqrt2,-1/\sqrt2)^T\), projected-input intercept \(\xi=0\), and \(a^{\max}=100\,\mathrm{Hz}\).
+\begin{enumerate}[label=\textbf{5\alph*.}]
+\item Reuse your LIF parameters from Question 4. Evaluate the rate at four points:
+\(\vct{0}\), \(\vct{e}\), \(-\vct{e}\), and \(\vct{e}_{\perp}=(1/\sqrt2,1/\sqrt2)^T\).
+Draw a \((x_1,x_2)\) plane. Mark the silent half-plane, threshold line, and arrows showing increasing rate. Describe the 3D tuning surface over the unit disk.
+\item On the unit circle write \(\vct{x}(\theta)=(\cos\theta,\sin\theta)^T\) and show that \(\vct{e}\cdot\vct{x}(\theta)=\cos(\theta+\pi/4)\). Sketch firing rate versus \(\theta\) for one revolution. Label its preferred angle, silent arc, and maximum.
+\item A cosine fit has form \(c_1\cos(c_2\theta+c_3)+c_4\). Propose plausible phase and frequency \((c_3,c_2)\) from the geometry. Explain why a cosine captures the preferred direction but cannot reproduce the actual LIF curve everywhere. No numerical curve fitting is required.
+\end{enumerate}
+
+\section*{6. Vector populations and identity decoders}
+Consider \(n=100\) neurons with random preferred angles uniform on \([0,2\pi)\). Their unit encoders are \(\vct{e}_i=(\cos\phi_i,\sin\phi_i)^T\). Their maximum rates follow PN1, \(a_i^{\max}\in[100,200]~\mathrm{Hz}\). For vectors, \(\xi_i\in[-0.95,0.95]\) is an intercept in the projected input \(\vct{e}_i\cdot\vct{x}\), not an \(x_1\)-coordinate. Use LIF rates and input samples \(\vct{x}_k\) in the unit disk.
+\begin{enumerate}[label=\textbf{6\alph*.}]
+\item Sketch eight representative encoder arrows evenly around the circle. Explain how to construct 100 unit encoders with no preferred population direction. What would a 100-arrow quiver plot look like?
+\item If there are \(m=1600\) sample points, state the shapes of encoder matrix \(E\), activity matrix \(A\), targets \(X\), and identity decoder \(D\) when their columns correspond to neurons or samples as appropriate. Derive the noise-aware matrix solution minimizing \(\|X-DA\|_F^2+m\sigma^2\|D\|_F^2\), with \(\sigma=0.2\max(A)\). Explain why the clean \(A\) enters this formula even when testing later uses noisy activities.
+\item To see the geometry without inverting a \(100\times100\) matrix, consider four cardinal encoders \(E_4=[(1,0)^T,(0,1)^T,(-1,0)^T,(0,-1)^T]\), four unit-cardinal training inputs \(X=E_4\), and normalized activity matrix \(A=I_4\). With \(m=4\) and \(\sigma=0.2\), calculate \(D\), sketch its four column vectors, and compare their directions and lengths with the encoders. Why might decoders for a general random LIF population not align exactly with the encoders?
+\end{enumerate}
+
+\newpage
+\section*{7. Testing vector decoders and the population-vector rule}
+The following smaller, asymmetric example isolates the final PN1 comparison. Four encoders are the columns of
+\[
+E=\begin{bmatrix}1&0&-1&0\\0&1&0&-1\end{bmatrix},
+\quad\text{while a fitted identity decoder is}\quad
+D=\begin{bmatrix}1&-0.2&-1&0.2\\-0.2&1&0.2&-1\end{bmatrix}.
+\]
+For three held-out target vectors, columns of \(X_{\mathrm{test}}\), measured normalized activities are columns of \(A_{\mathrm{test}}\):
+\[
+X_{\mathrm{test}}=\begin{bmatrix}1&0&-0.6\\0&0.5&-0.8\end{bmatrix},\qquad
+A_{\mathrm{test}}=\begin{bmatrix}1&0.1&0\\0.2&0.5&0\\0&0&0.6\\0&0&0.8\end{bmatrix}.
+\]
+The small off-axis activities represent cross-talk. These values are supplied for arithmetic; they are not exact outputs of the four-cardinal LIF population in Question 6.
+\begin{enumerate}[label=\textbf{7\alph*.}]
+\item Calculate \(\hat X_D=DA_{\mathrm{test}}\) and \(\hat X_E=EA_{\mathrm{test}}\). Plot each target vector and both decoded vectors as arrows from the origin, labeling the three test cases. Which method better preserves magnitudes here?
+\item Compute the flattened vector RMSE for both methods:
+\[
+\mathrm{RMSE}=\sqrt{\frac{1}{Nq}\sum_{k=1}^{N}\sum_{j=1}^{q}(\hat x_{jk}-x_{jk})^2},\quad N=3,\;q=2.
+\]
+Then normalize every nonzero target and decoded column to unit length and repeat the RMSE calculation. Which method better preserves direction? Show the normalization for at least one test vector.
+\item PN1 tests 20 vectors of varied directions and radii. Explain why testing only preferred directions or only points on the unit circle would miss some errors. Why can using encoders as decoders still give fairly accurate directions in a broad, roughly uniform population, even though fitted decoders usually perform better? Discuss one advantage of each approach.
+\end{enumerate}
+
+\vfill
+\noindent\textbf{Submission checklist:} derivations; completed tables; four scalar/LIF sketches; error scaling plots; 2D tuning sketch; encoder/decoder arrow sketches; vector comparison and both RMSE calculations. Attach extra handwritten graph paper as needed.
+
+\end{document}

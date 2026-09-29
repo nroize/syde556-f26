@@ -1,0 +1,94 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.78in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,fancyhdr}
+\setlist[enumerate]{leftmargin=*,itemsep=0.62em,topsep=0.2em}
+\pagestyle{fancy}\fancyhf{}
+\lhead{SYDE 556/750 \quad PN1 practice test}
+\rhead{Worked solutions}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+\newcommand{\vct}[1]{\boldsymbol{#1}}
+\begin{document}
+\begin{center}
+{\Large\bfseries PN1 Practice Test: Worked Solutions}\\[2pt]
+Neurons and Population Representation
+\end{center}
+
+\section*{1. Scalar ReLU encoding [5 marks]}
+At the preferred input \(e x=1\), current is \(J_{\max}=\alpha+J^{\mathrm{bias}}=120\). At the projected intercept \(e x=\xi=-1/2\), threshold current is \(J_{\mathrm{th}}=\alpha\xi+J^{\mathrm{bias}}=0\). Subtraction gives
+\[
+\alpha=\frac{120-0}{1-(-1/2)}=80,\qquad J^{\mathrm{bias}}=-\alpha\xi=40.
+\]
+Since \(e=-1\), the plotted crossing occurs at \(x=\xi/e=(-1/2)/(-1)=+1/2\). Thus \(J(x)=-80x+40\) and
+\begin{center}\begin{tabular}{rcccc}\toprule \(x\) & \(-1\) & 0 & \(1/2\) & 1\\\midrule \(a(x)\), Hz & 120 & 40 & 0 & 0\\\bottomrule\end{tabular}\end{center}
+The sketch is a straight line from \((-1,120)\) through \((0,40)\) to \((1/2,0)\), then flat at zero to \(x=1\).
+
+\section*{2. Identity decoding and noise [7 marks]}
+Multiplying the activity rows gives
+\[
+AA^T=\begin{bmatrix}0^2+1^2+1^2&0(1)+1(1)+1(0)\\1(0)+1(1)+0(1)&1^2+1^2+0^2\end{bmatrix}
+=\begin{bmatrix}2&1\\1&2\end{bmatrix},\qquad
+A\vct{x}=\begin{bmatrix}1\\-1\end{bmatrix}.
+\]
+The equations \(2d_1+d_2=1\) and \(d_1+2d_2=-1\) give \(\vct{d}=(1,-1)^T\). With the stipulated regularization amount \(m\sigma^2=1\),
+\[
+(AA^T+I)\vct{d}_{\mathrm{reg}}=
+\begin{bmatrix}3&1\\1&3\end{bmatrix}\vct{d}_{\mathrm{reg}}
+=\begin{bmatrix}1\\-1\end{bmatrix}
+\quad\Longrightarrow\quad \vct{d}_{\mathrm{reg}}=(1/2,-1/2)^T.
+\]
+Each reconstructed row comes from multiplying the decoder row by the activity matrix:
+\begin{center}\begin{tabular}{lcc}\toprule
+Decoder & \(\vct{d}^T A\) & \(\vct{d}^T A_{\mathrm{noisy}}\)\\\midrule
+Unregularized & \((-1,0,1)\) & \((-3/2,0,3/2)\)\\
+Noise aware & \((-1/2,0,1/2)\) & \((-3/4,0,3/4)\)\\\bottomrule\end{tabular}\end{center}
+The four RMSEs are
+\begin{center}\begin{tabular}{lcc}\toprule Decoder & Clean \(A\) & Noisy \(A_{\mathrm{noisy}}\)\\\midrule
+Unregularized & 0 & \(\sqrt{1/6}\)\\
+Noise aware & \(\sqrt{1/6}\) & \(\sqrt{1/24}\)\\\bottomrule\end{tabular}\end{center}
+For example, unregularized noisy errors are \((1/2,0,-1/2)\), giving \(\sqrt{[(1/2)^2+(1/2)^2]/3}=\sqrt{1/6}\). The regularized decoder sacrifices clean accuracy but is less sensitive to this noisy test matrix. The regularizer uses the assumed noise level; it is not fitted from this particular noisy draw.
+
+\section*{3. Sources of error [4 marks]}
+Doubling \(n\) divides distortion by four (\(0.040\to0.010\to0.0025\)), so the illustrated scaling is \(1/n^2\). It divides independent-noise error by two (\(0.020\to0.010\to0.0050\)), so that scaling is \(1/n\). If \(\sigma\) becomes ten times smaller while decoder weights stay fixed, \(E_{\mathrm{noise}}=\sigma^2\sum_i d_i^2\) becomes \(100\) times smaller. More independent neurons let a decoder spread weight across multiple estimates. Their zero-mean noise partly cancels; for roughly equal weights \(d_i\propto1/n\), the sum \(\sum_i d_i^2\propto1/n\). This conclusion depends on noise independence and on how the decoder weights change.
+
+\newpage
+\section*{4. LIF rates and decoding [5 marks]}
+Above threshold, rearrange the rate equation:
+\[
+\frac1a=\tau_{\mathrm{ref}}-\tau_{\mathrm{RC}}\ln(1-1/J)
+\quad\Longrightarrow\quad
+\boxed{J(a)=\frac{1}{1-\exp[(\tau_{\mathrm{ref}}-1/a)/\tau_{\mathrm{RC}}]}}.
+\]
+For \(a^{\max}=100\), the exponent is \((0.002-0.010)/0.020=-0.4\). Hence \(J_{\max}=1/(1-e^{-0.4})\approx3.03\). Because \(\xi=0\), the threshold condition is \(J^{\mathrm{bias}}=J_{\mathrm{th}}=1\), and \(\alpha=J_{\max}-1\approx2.03\).
+With \(e=+1\), \(J(x)=1+2.03x\), so it is silent for \(x\leq0\). Above that threshold the LIF rate rises nonlinearly; ReLU would have a straight active segment. For any LIF activity matrix \(B\), the noise-aware normal equation is
+\[
+\boxed{(BB^T+m\sigma^2 I)\vct{d}=B\vct{x}}.
+\]
+
+\section*{5. Two-dimensional tuning [4 marks]}
+The projected input is \(\vct{e}\cdot\vct{x}=(x_1-x_2)/\sqrt2\). Since \(J=1+\alpha\vct{e}\cdot\vct{x}\) and firing requires \(J>1\), the threshold line is \(x_1=x_2\); the silent half of the unit disk has \(x_1\leq x_2\). The preferred direction is southeast, at angle \(-\pi/4\). For a point on the unit circle,
+\[
+\vct{e}\cdot\vct{x}(\theta)=\frac{\cos\theta-\sin\theta}{\sqrt2}
+=\boxed{\cos(\theta+\pi/4)}.
+\]
+The cosine describes the current's dependence on angle. The \emph{firing rate} is zero on the silent half-circle and bends nonlinearly on the active half because of the LIF response, so a plain cosine is only an approximation to its shape.
+
+\section*{6. Vector populations [5 marks]}
+The activity and target matrices have one column per sample:
+\[
+A\in\mathbb R^{100\times1600},\qquad X\in\mathbb R^{2\times1600}.
+\]
+For one sample, \(\vct{a}\in\mathbb R^{100\times1}\) must become \(\hat{\vct{x}}\in\mathbb R^{2\times1}\). Thus \(\boxed{D\in\mathbb R^{2\times100}}\), so \(DA\) has shape \(2\times1600\), matching \(X\). The noise-aware normal equation is
+\[
+\boxed{D(AA^T+m\sigma^2I_{100})=XA^T}.
+\]
+For the small example, the encoder matrix and two decoded values are
+\[
+E=\begin{bmatrix}1&0&-1&0\\0&1&0&-1\end{bmatrix},\qquad
+D\vct{a}=\begin{bmatrix}15/16\\0\end{bmatrix},\qquad
+E\vct{a}=\begin{bmatrix}1\\1/4\end{bmatrix}.
+\]
+The fitted decoder has exactly the target direction. The encoder-decoded vector tilts upward. The target length is 1; the fitted vector's length is \(15/16=0.9375\), while the encoder vector's length is \(\sqrt{17}/4\approx1.031\), closer to 1. With many encoders covering directions fairly uniformly, neurons aligned with the input respond more strongly and opposing contributions tend to cancel, so the encoder sum can still give a reasonable direction.
+\end{document}
